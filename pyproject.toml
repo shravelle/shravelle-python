@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shravelle"
+version = "1.0.0"
+description = "Shravelle APM for Python: traces, metrics, logs and errors via OpenTelemetry (Django, Flask, FastAPI, Celery, requests, SQLAlchemy, psycopg, redis, ...)"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+dependencies = [
+  "opentelemetry-api>=1.25",
+  "opentelemetry-sdk>=1.25",
+  "opentelemetry-exporter-otlp-proto-http>=1.25",
+]
+
+[project.optional-dependencies]
+# installs instrumentations for every library found in the environment
+auto = ["opentelemetry-instrumentation>=0.46b0", "opentelemetry-distro>=0.46b0"]
+
+[project.scripts]
+shravelle-run = "shravelle.cli:run"
+shravelle = "shravelle.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["shravelle*"]
+
+[tool.setuptools.package-data]
+shravelle = ["_bootstrap/*.py"]
