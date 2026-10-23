@@ -62,22 +62,25 @@ def configure(service_name: Optional[str] = None, api_key: Optional[str] = None,
     if _state.get("configured"):
         return
     endpoint = (endpoint or _env("SHRAVELLE_ENDPOINT", "http://localhost:4318")).rstrip("/")
-    api_key = api_key or _env("SHRAVELLE_API_KEY")
+    api_key = api_key or _env("SHRAVELLE_API_KEY") or _env("SHRAVELLE_LICENSE_KEY")
     if not api_key:
         _log.warning("shravelle: SHRAVELLE_API_KEY is not set; telemetry will be rejected")
-    service_name = service_name or _env("SHRAVELLE_SERVICE_NAME", _env("OTEL_SERVICE_NAME", os.path.basename(sys.argv[0] or "python-app")))
+    service_name = service_name or _env("SHRAVELLE_APP_NAME", _env("SHRAVELLE_SERVICE_NAME", _env("OTEL_SERVICE_NAME", os.path.basename(sys.argv[0] or "python-app"))))
     rate = float(sample_rate if sample_rate is not None else _env("SHRAVELLE_SAMPLE_RATE", "1"))
     headers = {"x-api-key": api_key}
     attrs = {
         "service.name": service_name,
-        "service.version": service_version or _env("SHRAVELLE_SERVICE_VERSION"),
-        "deployment.environment.name": environment or _env("SHRAVELLE_ENV", "production"),
+        "service.version": service_version or _env("SHRAVELLE_APP_VERSION") or _env("SHRAVELLE_SERVICE_VERSION"),
+        "deployment.environment.name": environment or _env("SHRAVELLE_APP_ENV", _env("SHRAVELLE_ENV", "production")),
         "host.name": _env("SHRAVELLE_HOSTNAME", socket.gethostname()),
         "process.runtime.name": sys.implementation.name,
         "process.runtime.version": ".".join(map(str, sys.version_info[:3])),
         "telemetry.distro.name": "shravelle-python",
     }
     attrs.update(resource_attributes or {})
+    _org = _env("SHRAVELLE_ORGANISATION", _env("SHRAVELLE_ORGANIZATION"))
+    if _org:
+        attrs["shravelle.organization"] = _org
     resource = Resource.create(attrs)
 
     tp = TracerProvider(resource=resource, sampler=ParentBased(TraceIdRatioBased(rate)))
